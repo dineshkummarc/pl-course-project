@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Scheem Live Demo</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="scheem.js"></script>
+<script src="parser.js"></script>
+<script>
+	// Utility function to log messages
+	var log = function( msg )
+	{
+		$('#output').append( '<p>' + msg + '</p>' );
+	};
+
+	// After page load
+	$( function()
+	{
+		$( '#button' ).click( function()
+		{
+			var user_text = $('#input').val();
+			$( '#output' ).html( '' ); // clear output
+
+			try
+			{
+				var parsed = SCHEEM.parse( user_text );
+				log( 'Parsed: ' + JSON.stringify( parsed ) );
+				try
+				{
+					var result = evalScheem( parsed, {} );
+					log( 'Result: ' + JSON.stringify( result ) );
+				}
+				catch( e )
+				{
+					log( 'Eval Error: ' + e );
+				}
+			}
+			catch( e )
+			{
+				log( 'Parse Error: ' + e );
+			}
+		});
+	});
+</script>
+<textarea style="width:800px; height:300px;" id="input">
+(begin
+	(define n 100)
+	(/
+		(* n (+ n 1))
+		2))
+</textarea>
+<br />
+<input id="button" type="button" value="Evaluate"/>
+<br />
+<div style="border: solid 1px;" id="output">
+
+</div>

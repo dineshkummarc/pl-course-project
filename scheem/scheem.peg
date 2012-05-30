@@ -1,0 +1,38 @@
+start =
+	exp:expression whitespace? { return exp; }
+
+expression =
+	whitespace exp:expression { return exp; }
+	/ comment exp:expression { return exp; }
+	/ list
+	/ atom
+	/ quote
+
+quote =
+	"'" list:list { return [ "quote", list ]; }
+
+atom =
+	number
+	/ string:character+ { return string.join( "" ); }
+
+character =
+	[0-9a-zA-Z_?!+\-=@#$%^&*/.<>]
+
+number =
+	first:[1-9] rest:[0-9]*  { return parseInt( first + rest.join(""), 10 ) }
+
+sequence =
+	first:expression whitespace rest:sequence { return [ first ].concat( rest ); }
+	/ exp:expression { return [ exp ]; }
+
+list =
+	"(" whitespace? seq:sequence whitespace? ")" { return seq; }
+
+whitespace =
+	whitespacechar+
+
+whitespacechar =
+	[ \n\t]
+
+comment =
+	";;" (!"\n" .)* "\n"
