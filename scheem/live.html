@@ -11,9 +11,23 @@
 		$('#output').append( '<p>' + msg + '</p>' );
 	};
 
+	function prettify( object )
+	{
+		var result = "<dl>";
+
+		for( var i in object )
+		{
+			result += "<dt>" + i + "</dt><dd>" + object[ i ] + "</dd>";
+		}
+
+		return result + "</dl>";
+	}
+
 	// After page load
 	$( function()
 	{
+
+
 		$( '#button' ).click( function()
 		{
 			var user_text = $('#input').val();
@@ -30,12 +44,12 @@
 				}
 				catch( e )
 				{
-					log( 'Eval Error: ' + e );
+					log( 'Eval Error: ' + prettify( e ) );
 				}
 			}
 			catch( e )
 			{
-				log( 'Parse Error: ' + e );
+				log( 'Parse Error: ' + prettify( e ) );
 			}
 		});
 	});
@@ -51,5 +65,35 @@
 <input id="button" type="button" value="Evaluate"/>
 <br />
 <div style="border: solid 1px;" id="output">
+</div>
 
+
+<div style="display: none;" id="examples">
+	<textarea name="Factorial">
+		(begin
+			(define factorial
+				(lambda (n)
+					(if (= n 0)
+						1
+						(* n (factorial (- n 1))))))
+			(factorial 10))
+	</textarea>
+	<textarea name="Fibonacci">
+		(begin
+			(define fibonacci
+				(lambda (n)
+					(if (< n 2)
+						1
+						(+ (fibonacci (- n 2)) (fibonacci (- n 1))))))
+			(fibonacci 10))
+	</textarea>
+	<textarea name="Reverse a list">
+		(begin
+			(define reverse
+				(lambda (list)
+					(if (< list 2)
+						1
+						(+ (fibonacci (- n 2)) (fibonacci (- n 1))))))
+			(reverse (2 3 5 7 11 13 17 19)))
+	</textarea>
 </div>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Toy Language Live Demo</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="toy.js"></script>
+<script src="parser.js"></script>
+<script>
+	// Utility function to log messages
+	var log = function( msg )
+	{
+		$('#output').append( '<p>' + msg + '</p>' );
+	};
+
+	// After page load
+	$( function()
+	{
+		$( '#button' ).click( function()
+		{
+			var user_text = $('#input').val();
+			$( '#output' ).html( '' ); // clear output
+
+			try
+			{
+				var parsed = ToyLang.parse( user_text );
+				log( 'Parsed: ' + JSON.stringify( parsed ) );
+				try
+				{
+					var result = evalToyLang( parsed, {} );
+					log( 'Result: ' + JSON.stringify( result ) );
+				}
+				catch( e )
+				{
+					log( 'Eval Error: ' + e );
+				}
+			}
+			catch( e )
+			{
+				log( 'Parse Error: ' + e );
+			}
+		});
+	});
+</script>
+<textarea style="width:800px; height:300px;" id="input">
+module wibbly.test
+
+import wibbly.io as io
+
+A = {
+	foo: ( x ) => { x + 1 }
+	bar: 2
+}
+
+B = {
+	baz: 4
+	quux: true
+	bar: 7
+}
+
+obj = { a: 0 }( A )
+
+if( obj.bar == 2 )
+{
+	io.print( "Yep!" )
+}
+</textarea>
+<br />
+<input id="button" type="button" value="Evaluate"/>
+<br />
+<div style="border: solid 1px;" id="output">
+
+</div>

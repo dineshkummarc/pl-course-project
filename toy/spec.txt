@@ -1,0 +1,63 @@
+Statement Seperation
+	Statements are seperated with newlines
+
+Comments
+	// to end of line
+	# to end of line
+	/* to */
+
+Types
+	boolean - true, false
+	int - 0, -1, +5, 0xFF, 
+	float (double) - 34.67, 6.5e+4
+	string (utf8) - "double quoted", 'single quoted'
+	object - { type: "object" }
+	null - null
+	function - function( x ) x;
+	?special - NaN, infinity, -infinity
+
+Operators and precedence
+	clone (?)
+	++ --
+	~ - (negation)
+	isa (x isa y)
+	!
+	* / %
+	+ -
+	<< >>
+	< <= > >= <>
+	== !=
+	&
+	^
+	|
+	&&
+	||
+	?:
+	= += -= *= /= %= &= |= ^= <<= >>= :
+	,
+
+
+Interesting idea
+----------------
+
+Statement:
+	import identifier "\n"
+	module identifier [as identifier] "\n"
+	return expression "\n"
+	expression "\n"
+
+Expressions types:
+
+	{ statements }
+	expression operator expression
+	identifier( expression )
+	identifier
+	"string"
+	'string'
+	numeric
+	expression, expression, ...
+	( expression )
+
+Then the identifier( expression ) syntax gives you:
+	function call: sum( 1, 2, 3 )		// ( 1, 2, 3 ) is a list expression
+	control statement:	if( 1 < 2, { true }, { false } )

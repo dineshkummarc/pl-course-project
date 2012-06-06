@@ -42,6 +42,7 @@ SCHEEM = (function(){
         "quote": parse_quote,
         "atom": parse_atom,
         "character": parse_character,
+        "number_frac": parse_number_frac,
         "number": parse_number,
         "sequence": parse_sequence,
         "list": parse_list,
@@ -238,7 +239,7 @@ SCHEEM = (function(){
           }
         }
         if (result0 !== null) {
-          result1 = parse_list();
+          result1 = parse_expression();
           if (result1 !== null) {
             result0 = [result0, result1];
           } else {
@@ -250,7 +251,7 @@ SCHEEM = (function(){
           pos = clone(pos1);
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, list) { return [ "quote", list ]; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+          result0 = (function(offset, line, column, expression) { return [ "quote", expression ]; })(pos0.offset, pos0.line, pos0.column, result0[1]);
         }
         if (result0 === null) {
           pos = clone(pos0);
@@ -260,26 +261,57 @@ SCHEEM = (function(){
       
       function parse_atom() {
         var result0, result1;
-        var pos0;
+        var pos0, pos1;
         
-        result0 = parse_number();
-        if (result0 === null) {
-          pos0 = clone(pos);
-          result1 = parse_character();
+        pos0 = clone(pos);
+        pos1 = clone(pos);
+        if (input.charCodeAt(pos.offset) === 45) {
+          result0 = "-";
+          advance(pos, 1);
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"-\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse_number();
           if (result1 !== null) {
-            result0 = [];
-            while (result1 !== null) {
-              result0.push(result1);
-              result1 = parse_character();
-            }
+            result0 = [result0, result1];
           } else {
             result0 = null;
+            pos = clone(pos1);
           }
-          if (result0 !== null) {
-            result0 = (function(offset, line, column, string) { return string.join( "" ); })(pos0.offset, pos0.line, pos0.column, result0);
-          }
+        } else {
+          result0 = null;
+          pos = clone(pos1);
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, line, column, num) { return -num; })(pos0.offset, pos0.line, pos0.column, result0[1]);
+        }
+        if (result0 === null) {
+          pos = clone(pos0);
+        }
+        if (result0 === null) {
+          result0 = parse_number();
           if (result0 === null) {
-            pos = clone(pos0);
+            pos0 = clone(pos);
+            result1 = parse_character();
+            if (result1 !== null) {
+              result0 = [];
+              while (result1 !== null) {
+                result0.push(result1);
+                result1 = parse_character();
+              }
+            } else {
+              result0 = null;
+            }
+            if (result0 !== null) {
+              result0 = (function(offset, line, column, string) { return string.join( "" ); })(pos0.offset, pos0.line, pos0.column, result0);
+            }
+            if (result0 === null) {
+              pos = clone(pos0);
+            }
           }
         }
         return result0;
@@ -300,19 +332,19 @@ SCHEEM = (function(){
         return result0;
       }
       
-      function parse_number() {
+      function parse_number_frac() {
         var result0, result1, result2;
         var pos0, pos1;
         
         pos0 = clone(pos);
         pos1 = clone(pos);
-        if (/^[1-9]/.test(input.charAt(pos.offset))) {
-          result0 = input.charAt(pos.offset);
+        if (input.charCodeAt(pos.offset) === 46) {
+          result0 = ".";
           advance(pos, 1);
         } else {
           result0 = null;
           if (reportFailures === 0) {
-            matchFailed("[1-9]");
+            matchFailed("\".\"");
           }
         }
         if (result0 !== null) {
@@ -349,7 +381,61 @@ SCHEEM = (function(){
           pos = clone(pos1);
         }
         if (result0 !== null) {
-          result0 = (function(offset, line, column, first, rest) { return parseInt( first + rest.join(""), 10 ) })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
+          result0 = (function(offset, line, column, chars) { return "." + chars.join(''); })(pos0.offset, pos0.line, pos0.column, result0[1]);
+        }
+        if (result0 === null) {
+          pos = clone(pos0);
+        }
+        return result0;
+      }
+      
+      function parse_number() {
+        var result0, result1;
+        var pos0, pos1;
+        
+        pos0 = clone(pos);
+        pos1 = clone(pos);
+        if (/^[0-9]/.test(input.charAt(pos.offset))) {
+          result1 = input.charAt(pos.offset);
+          advance(pos, 1);
+        } else {
+          result1 = null;
+          if (reportFailures === 0) {
+            matchFailed("[0-9]");
+          }
+        }
+        if (result1 !== null) {
+          result0 = [];
+          while (result1 !== null) {
+            result0.push(result1);
+            if (/^[0-9]/.test(input.charAt(pos.offset))) {
+              result1 = input.charAt(pos.offset);
+              advance(pos, 1);
+            } else {
+              result1 = null;
+              if (reportFailures === 0) {
+                matchFailed("[0-9]");
+              }
+            }
+          }
+        } else {
+          result0 = null;
+        }
+        if (result0 !== null) {
+          result1 = parse_number_frac();
+          result1 = result1 !== null ? result1 : "";
+          if (result1 !== null) {
+            result0 = [result0, result1];
+          } else {
+            result0 = null;
+            pos = clone(pos1);
+          }
+        } else {
+          result0 = null;
+          pos = clone(pos1);
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, line, column, whole, fraction) { return parseFloat( whole.join( "" ) + fraction ); })(pos0.offset, pos0.line, pos0.column, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = clone(pos0);
@@ -461,6 +547,52 @@ SCHEEM = (function(){
         }
         if (result0 === null) {
           pos = clone(pos0);
+        }
+        if (result0 === null) {
+          pos0 = clone(pos);
+          pos1 = clone(pos);
+          if (input.charCodeAt(pos.offset) === 40) {
+            result0 = "(";
+            advance(pos, 1);
+          } else {
+            result0 = null;
+            if (reportFailures === 0) {
+              matchFailed("\"(\"");
+            }
+          }
+          if (result0 !== null) {
+            result1 = parse_whitespace();
+            result1 = result1 !== null ? result1 : "";
+            if (result1 !== null) {
+              if (input.charCodeAt(pos.offset) === 41) {
+                result2 = ")";
+                advance(pos, 1);
+              } else {
+                result2 = null;
+                if (reportFailures === 0) {
+                  matchFailed("\")\"");
+                }
+              }
+              if (result2 !== null) {
+                result0 = [result0, result1, result2];
+              } else {
+                result0 = null;
+                pos = clone(pos1);
+              }
+            } else {
+              result0 = null;
+              pos = clone(pos1);
+            }
+          } else {
+            result0 = null;
+            pos = clone(pos1);
+          }
+          if (result0 !== null) {
+            result0 = (function(offset, line, column) { return []; })(pos0.offset, pos0.line, pos0.column);
+          }
+          if (result0 === null) {
+            pos = clone(pos0);
+          }
         }
         return result0;
       }

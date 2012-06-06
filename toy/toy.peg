@@ -1,0 +1,114 @@
+
+// Overall structure
+start			=	ews s:statements ws line_comment?				{ return s };
+statements		=	statement*
+statement		=	s:part_statement ws line_comment? EOS						{ return s };
+
+// Part statement is a statement without an EOS. Allows us to have } be EOS only in blocks
+part_statement =	ws i:identifier ws "=" ws e:expression						{ return { tag: "=", left: i, right: e }; }
+				/	ws "return" ws e:expression									{ return { tag: "return", expression: e }; }
+				/	ws "module" ws i:identifier									{ return { tag: "module", name: i }; }
+				/	ws "import" ws i:identifier ws "as" ws j:identifier			{ return { tag: "import", name: i, alias: j }; }
+				/	ws "import" ws i:identifier									{ return { tag: "import", name: i }; }
+				/	ws e:expression												{ return { tag: "ignore", body: e }; }
+statement_block	=	empty_lines ws "{" empty_lines s:statements ws "}"			{ return s; }
+				/	empty_lines ws "{" empty_lines s:statements p:part_statement ws"}"			{ s.push( p ); return s; }
+				/	statement
+
+// Expressions
+expression		=	e:ternary
+ternary			=	e:operation ws "?" ews left:ternary ews ":" ews right:ternary	{ return { tag: "ternary", expression: e, left: left, right: right }; }
+				/	operation
+// Need to get precedence working again...
+operation		=	left:primary ws op:operators ws right:operation		{ return { tag: op, left: left, right: right }; }
+				/	primary
+
+// Primary - these are your "first class citizens"
+primary			=	number
+				/	special
+				/	function
+				/	"(" e:expression ")" args:argument_list						{ return { tag:"call", 'function':e, args:args }; }
+				/	i:identifier args:argument_list								{ return { tag:"call", 'function':i, args:args }; }
+				/	"(" expr:expression ")"										{ return expr; }
+				/	i:identifier												{ return { tag:"ident", name:i } }
+argument_list	=	"(" ews ")"													{ return []; }
+				/	"(" ews first:expression rest:comma_expression* ews ")"		{ return [ first ].concat( rest ); }
+comma_expression =	ews "," ews expr:expression									{ return expr; }
+function		=	args:argument_list ws "=>" body:statement_block				{ return { tag: "function", body: body, args: args }; }
+
+
+// Tokens
+ws				=	[ \t]*
+ews				=	[ \t\n]*
+identifier		=	a:valid_first b:valid_rest*									{ return a + b.join( "" ); }
+valid_first		=	[a-zA-Z]
+valid_rest		=	[a-zA-Z0-9_.]
+number_frac		=	"." chars:[0-9]*											{ return "." + chars.join( "" ); }
+number			=	sign:"-"? chars:[0-9]+ frac:number_frac?					{ return parseFloat( sign + chars.join( "" ) + frac ); }
+special			=	true / false / null
+true			=	"true"														{ return true; }
+false			=	"false"														{ return false; }
+null			=	"null"														{ return { tag: "null" }; } // PEG.js internally uses returning null to mean no match
+EOS				=	"\n" empty_lines / EOF
+EOF				=	!.
+empty_lines		=	( [ \t]* line_comment? "\n" )*
+
+// Operators
+operators			=	"||"
+					/	"&&"
+					/	"|"
+					/	"^"
+					/	"&"
+					/	"==" / "!="
+					/	"<=" / "<>" / "<" / ">=" / ">"
+					/	"<<" / ">>"
+					/	"+" / "-"
+					/	"*" / "/" / "%"
+					/	"isa"
+unary_operators		=	"!"
+					/	"~" / "-"
+					/	"++" / "--"
+
+// Unused?
+line_comment		=	"#" (!"\n" .)*
+					/	"//" (!"\n" .)*
+multiline_comment	=	"/*" (!"*/" .)* "*/"
+
+
+/* Older (and much slower) precedence based operators
+*/
+// Precedence levels
+old_ternary			=	e:logical_or ws "?" ews left:old_ternary ews ":" ews right:old_ternary	{ return { tag: "ternary", expression: e, left: left, right: right }; }
+				/	logical_or
+logical_or		=	left:logical_and ws op:logical_or_ops ws right:logical_or		{ return { tag: op, left: left, right: right }; }
+				/	logical_and
+logical_and		=	left:equality ws op:logical_and_ops ws right:logical_and		{ return { tag: op, left: left, right: right }; }
+				/	equality
+equality		=	left:comparison ws op:equality_ops ws right:equality			{ return { tag: op, left: left, right: right }; }
+				/	comparison
+comparison		=	left:additive ws op:comparison_ops ws right:comparison			{ return { tag: op, left: left, right: right }; }
+				/	additive
+additive		=	left:multiplicative ws op:additive_ops ws right:additive		{ return { tag: op, left: left, right: right }; }
+				/	multiplicative
+multiplicative	=	left:not ws op:multiplicative_ops ws right:multiplicative		{ return { tag: op, left: left, right: right }; }
+				/	not
+not				=	op:not_ops ws e:not												{ return { tag: op, expression: e }; }
+				/	primary
+
+// Operators
+logical_or_ops		=	"||"
+logical_and_ops		=	"&&"
+bitwise_or_ops		=	"|"
+bitwise_xor_ops		=	"^"
+bitwise_and_ops		=	"&"
+equality_ops		=	"==" / "!="
+comparison_ops		=	"<=" / "<>" / "<" / ">=" / ">"
+shift_ops			=	"<<" / ">>"
+additive_ops		=	"+" / "-"
+multiplicative_ops	=	"*" / "/" / "%"
+not_ops				=	"!"
+isa_ops				=	"isa"
+negation_ops		=	"~" / "-"
+inc_dec_ops			=	"++" / "--"
+/*
+*/

@@ -9,7 +9,7 @@ expression =
 	/ quote
 
 quote =
-	"'" list:list { return [ "quote", list ]; }
+	"'" expression:expression { return [ "quote", expression ]; }
 
 atom =
 	number
@@ -18,8 +18,11 @@ atom =
 character =
 	[0-9a-zA-Z_?!+\-=@#$%^&*/.<>]
 
+number_frac =
+	"." chars:[0-9]* { return "." + chars.join(''); }
+
 number =
-	first:[1-9] rest:[0-9]*  { return parseInt( first + rest.join(""), 10 ) }
+	sign:[-+]? whole:[0-9]+ fraction:number_frac?  { return parseFloat( sign + whole.join( "" ) + fraction ); }
 
 sequence =
 	first:expression whitespace rest:sequence { return [ first ].concat( rest ); }
@@ -27,6 +30,7 @@ sequence =
 
 list =
 	"(" whitespace? seq:sequence whitespace? ")" { return seq; }
+	/ "(" whitespace? ")" { return []; }
 
 whitespace =
 	whitespacechar+
