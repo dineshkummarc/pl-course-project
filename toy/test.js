@@ -23,7 +23,7 @@ function start()
 //			assert.deepEqual( ToyParser.parse( "~x" ), [ { tag: "ignore", body: { tag: "~", expression: { tag: "ident", name: "x" } } } ] );
 //			assert.deepEqual( ToyParser.parse( "-x" ), [ { tag: "ignore", body: { tag: "-", expression: { tag: "ident", name: "x" } } } ] );
 //			assert.deepEqual( ToyParser.parse( "foo isa bar" ), [ { tag: "ignore", body: { tag: "isa", left: { tag: "ident", name: "foo" }, right: { tag: "ident", name: "bar" } } } ] );
-//			assert.deepEqual( ToyParser.parse( "!foo" ), [ { tag: "ignore", body: { tag: "!", expression: { tag: "ident", name: "x" } } } ] );
+			assert.deepEqual( ToyParser.parse( "!foo" ), [ { tag: "ignore", body: { tag: "!", expression: { tag: "ident", name: "foo" } } } ] );
 			assert.deepEqual( ToyParser.parse( "1*2/3%5" ), [ { tag: "ignore", body: { tag: "*", left: 1, right: { tag: "/", left: 2, right: { tag: "%", left: 3, right: 5 } } } } ] );
 			assert.deepEqual( ToyParser.parse( "1+2-3" ), [ { tag: "ignore", body: { tag: "+", left: 1, right: { tag: "-", left: 2, right: 3 } } } ] );
 //			assert.deepEqual( ToyParser.parse( "1<<8>>2" ), [ { tag: "ignore", body: { tag: "<<", left: 1, right: { tag: ">>", left: 8, right: 2 } } } ] );
@@ -71,11 +71,13 @@ function start()
 			assert.deepEqual( ToyParser.parse( "0.001" ), [ { tag: "ignore", body: 0.001 } ] );
 			assert.deepEqual( ToyParser.parse( "-0.5" ), [ { tag: "ignore", body: -0.5 } ] );
 			assert.deepEqual( ToyParser.parse( "null" ), [ { tag: "ignore", body: { tag: "null" } } ] );
-//			assert.deepEqual( ToyParser.parse( "4.5e+4" ), [ { tag: "ignore", body: 45000 } ] );
-//			assert.deepEqual( ToyParser.parse( "4.5e-4" ), [ { tag: "ignore", body: 0.00045 } ] );
-//			assert.deepEqual( ToyParser.parse( "4.5e4" ), [ { tag: "ignore", body: 45000 } ] );
-//			assert.deepEqual( ToyParser.parse( "'single quoted string'" ), [ { tag: "ignore", body: "single quoted string" } ] );
-//			assert.deepEqual( ToyParser.parse( '"double quoted string"' ), [ { tag: "ignore", body: "double quoted string" } ] );
+			//assert.deepEqual( ToyParser.parse( "4.5e+4" ), [ { tag: "ignore", body: 45000 } ] );
+			//assert.deepEqual( ToyParser.parse( "4.5e-4" ), [ { tag: "ignore", body: 0.00045 } ] );
+			//assert.deepEqual( ToyParser.parse( "4.5e4" ), [ { tag: "ignore", body: 45000 } ] );
+			assert.deepEqual( ToyParser.parse( "''" ), [ { tag: "ignore", body: "" } ] );
+			assert.deepEqual( ToyParser.parse( '""' ), [ { tag: "ignore", body: "" } ] );
+			assert.deepEqual( ToyParser.parse( "'single quoted string'" ), [ { tag: "ignore", body: "single quoted string" } ] );
+			assert.deepEqual( ToyParser.parse( '"double quoted string"' ), [ { tag: "ignore", body: "double quoted string" } ] );
 		});
 
 		test( 'multi-line statements', function()

@@ -1,50 +1,89 @@
 
 // Overall structure
-start			=	ews s:statements ws line_comment?				{ return s };
+start			=	__ s:statements _ line_comment?				{ return s };
 statements		=	statement*
-statement		=	s:part_statement ws line_comment? EOS						{ return s };
+statement		=	s:part_statement _ line_comment? EOS						{ return s };
 
 // Part statement is a statement without an EOS. Allows us to have } be EOS only in blocks
-part_statement =	ws i:identifier ws "=" ws e:expression						{ return { tag: "=", left: i, right: e }; }
-				/	ws "return" ws e:expression									{ return { tag: "return", expression: e }; }
-				/	ws "module" ws i:identifier									{ return { tag: "module", name: i }; }
-				/	ws "import" ws i:identifier ws "as" ws j:identifier			{ return { tag: "import", name: i, alias: j }; }
-				/	ws "import" ws i:identifier									{ return { tag: "import", name: i }; }
-				/	ws e:expression												{ return { tag: "ignore", body: e }; }
-statement_block	=	empty_lines ws "{" empty_lines s:statements ws "}"			{ return s; }
-				/	empty_lines ws "{" empty_lines s:statements p:part_statement ws"}"			{ s.push( p ); return s; }
+part_statement =	_ i:identifier _ "=" _ e:expression						{ return { tag: "=", left: i, right: e }; }
+				/	_ "return" _ e:expression									{ return { tag: "return", expression: e }; }
+				/	_ "module" _ i:identifier									{ return { tag: "module", name: i }; }
+				/	_ "import" _ i:identifier _ "as" _ j:identifier			{ return { tag: "import", name: i, alias: j }; }
+				/	_ "import" _ i:identifier									{ return { tag: "import", name: i }; }
+				/	_ e:expression												{ return { tag: "ignore", body: e }; }
+statement_block	=	empty_lines _ "{" empty_lines s:statements _ "}"			{ return s; }
+				/	empty_lines _ "{" empty_lines s:statements p:part_statement _"}"			{ s.push( p ); return s; }
 				/	statement
 
 // Expressions
 expression		=	e:ternary
-ternary			=	e:operation ws "?" ews left:ternary ews ":" ews right:ternary	{ return { tag: "ternary", expression: e, left: left, right: right }; }
-				/	operation
-// Need to get precedence working again...
-operation		=	left:primary ws op:operators ws right:operation		{ return { tag: op, left: left, right: right }; }
+// Precedence levels
+ternary			=	e:logical_or _ "?" __ left:ternary __ ":" __ right:ternary				{ return { tag: "ternary", expression: e, left: left, right: right }; }
+				/	logical_or
+logical_or		=	head:logical_and tail:( _ "||" _ logical_or )*
+					{
+						var result = head;
+						for( var i = 0; i < tail.length; i++ ) result = { tag: "||", left: result, right: tail[ i ][ 3 ] };
+						return result;
+					}
+logical_and		=	head:equality tail:( _ "&&" _ logical_and )*
+					{
+						var result = head;
+						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+						return result;
+					}
+equality		=	head:comparison tail:( _ op:equality_ops _ equality )*
+					{
+						var result = head;
+						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+						return result;
+					}
+comparison		=	head:additive tail:( _ op:comparison_ops _ comparison )*
+					{
+						var result = head;
+						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+						return result;
+					}
+additive		=	head:multiplicative tail:( _ op:additive_ops _ additive )*
+					{
+						var result = head;
+						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+						return result;
+					}
+multiplicative	=	head:not tail:( _ op:multiplicative_ops _ multiplicative )*
+					{
+						var result = head;
+						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+						return result;
+					}
+not				=	"!" _ e:not																{ return { tag: "!", expression: e }; }
 				/	primary
 
 // Primary - these are your "first class citizens"
 primary			=	number
 				/	special
 				/	function
+				/	string
 				/	"(" e:expression ")" args:argument_list						{ return { tag:"call", 'function':e, args:args }; }
 				/	i:identifier args:argument_list								{ return { tag:"call", 'function':i, args:args }; }
 				/	"(" expr:expression ")"										{ return expr; }
 				/	i:identifier												{ return { tag:"ident", name:i } }
-argument_list	=	"(" ews ")"													{ return []; }
-				/	"(" ews first:expression rest:comma_expression* ews ")"		{ return [ first ].concat( rest ); }
-comma_expression =	ews "," ews expr:expression									{ return expr; }
-function		=	args:argument_list ws "=>" body:statement_block				{ return { tag: "function", body: body, args: args }; }
+argument_list	=	"(" __ ")"													{ return []; }
+				/	"(" __ first:expression rest:comma_expression* __ ")"		{ return [ first ].concat( rest ); }
+comma_expression =	__ "," __ expr:expression									{ return expr; }
+function		=	args:argument_list _ "=>" body:statement_block				{ return { tag: "function", body: body, args: args }; }
 
 
 // Tokens
-ws				=	[ \t]*
-ews				=	[ \t\n]*
+_				=	[ \t]*
+__				=	[ \t\n]*
 identifier		=	a:valid_first b:valid_rest*									{ return a + b.join( "" ); }
 valid_first		=	[a-zA-Z]
 valid_rest		=	[a-zA-Z0-9_.]
-number_frac		=	"." chars:[0-9]*											{ return "." + chars.join( "" ); }
+number_frac		=	"." chars:[0-9]+											{ return "." + chars.join( "" ); }
 number			=	sign:"-"? chars:[0-9]+ frac:number_frac?					{ return parseFloat( sign + chars.join( "" ) + frac ); }
+string			=	"'" text:([^']*) "'"										{ return text.join( "" ); }
+				/	"\"" text:([^"]*) "\""										{ return text.join( "" ); }
 special			=	true / false / null
 true			=	"true"														{ return true; }
 false			=	"false"														{ return false; }
@@ -74,27 +113,6 @@ line_comment		=	"#" (!"\n" .)*
 					/	"//" (!"\n" .)*
 multiline_comment	=	"/*" (!"*/" .)* "*/"
 
-
-/* Older (and much slower) precedence based operators
-*/
-// Precedence levels
-old_ternary			=	e:logical_or ws "?" ews left:old_ternary ews ":" ews right:old_ternary	{ return { tag: "ternary", expression: e, left: left, right: right }; }
-				/	logical_or
-logical_or		=	left:logical_and ws op:logical_or_ops ws right:logical_or		{ return { tag: op, left: left, right: right }; }
-				/	logical_and
-logical_and		=	left:equality ws op:logical_and_ops ws right:logical_and		{ return { tag: op, left: left, right: right }; }
-				/	equality
-equality		=	left:comparison ws op:equality_ops ws right:equality			{ return { tag: op, left: left, right: right }; }
-				/	comparison
-comparison		=	left:additive ws op:comparison_ops ws right:comparison			{ return { tag: op, left: left, right: right }; }
-				/	additive
-additive		=	left:multiplicative ws op:additive_ops ws right:additive		{ return { tag: op, left: left, right: right }; }
-				/	multiplicative
-multiplicative	=	left:not ws op:multiplicative_ops ws right:multiplicative		{ return { tag: op, left: left, right: right }; }
-				/	not
-not				=	op:not_ops ws e:not												{ return { tag: op, expression: e }; }
-				/	primary
-
 // Operators
 logical_or_ops		=	"||"
 logical_and_ops		=	"&&"
@@ -110,5 +128,3 @@ not_ops				=	"!"
 isa_ops				=	"isa"
 negation_ops		=	"~" / "-"
 inc_dec_ops			=	"++" / "--"
-/*
-*/
