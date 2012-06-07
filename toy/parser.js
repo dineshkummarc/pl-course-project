@@ -51,6 +51,7 @@ ToyParser = (function(){
         "additive": parse_additive,
         "multiplicative": parse_multiplicative,
         "not": parse_not,
+        "sign": parse_sign,
         "primary": parse_primary,
         "argument_list": parse_argument_list,
         "comma_expression": parse_comma_expression,
@@ -670,7 +671,14 @@ ToyParser = (function(){
             pos = pos0;
           }
           if (result0 === null) {
+            pos0 = pos;
             result0 = parse_statement();
+            if (result0 !== null) {
+              result0 = (function(offset, s) { return [ s ]; })(pos0, result0);
+            }
+            if (result0 === null) {
+              pos = pos0;
+            }
           }
         }
         return result0;
@@ -864,10 +872,10 @@ ToyParser = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, head, tail) {
-        	var result = head;
-        	for( var i = 0; i < tail.length; i++ ) result = { tag: "||", left: result, right: tail[ i ][ 3 ] };
-        	return result;
-        })(pos0, result0[0], result0[1]);
+        						var result = head;
+        						for( var i = 0; i < tail.length; i++ ) result = { tag: "||", left: result, right: tail[ i ][ 3 ] };
+        						return result;
+        					})(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -967,10 +975,10 @@ ToyParser = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, head, tail) {
-        	var result = head;
-        	for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
-        	return result;
-        })(pos0, result0[0], result0[1]);
+        						var result = head;
+        						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+        						return result;
+        					})(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1054,10 +1062,10 @@ ToyParser = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, head, tail) {
-        	var result = head;
-        	for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
-        	return result;
-        })(pos0, result0[0], result0[1]);
+        						var result = head;
+        						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+        						return result;
+        					})(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1141,10 +1149,10 @@ ToyParser = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, head, tail) {
-        	var result = head;
-        	for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
-        	return result;
-        })(pos0, result0[0], result0[1]);
+        						var result = head;
+        						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+        						return result;
+        					})(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1228,10 +1236,10 @@ ToyParser = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, head, tail) {
-        	var result = head;
-        	for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
-        	return result;
-        })(pos0, result0[0], result0[1]);
+        						var result = head;
+        						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+        						return result;
+        					})(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1315,10 +1323,10 @@ ToyParser = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, head, tail) {
-        	var result = head;
-        	for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
-        	return result;
-        })(pos0, result0[0], result0[1]);
+        						var result = head;
+        						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
+        						return result;
+        					})(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -1366,7 +1374,77 @@ ToyParser = (function(){
           pos = pos0;
         }
         if (result0 === null) {
-          result0 = parse_primary();
+          result0 = parse_sign();
+        }
+        return result0;
+      }
+      
+      function parse_sign() {
+        var result0, result1;
+        var pos0, pos1;
+        
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 45) {
+          result0 = "-";
+          pos++;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"-\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse_primary();
+          if (result1 !== null) {
+            result0 = [result0, result1];
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, e) { return -e; })(pos0, result0[1]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        if (result0 === null) {
+          pos0 = pos;
+          pos1 = pos;
+          if (input.charCodeAt(pos) === 43) {
+            result0 = "+";
+            pos++;
+          } else {
+            result0 = null;
+            if (reportFailures === 0) {
+              matchFailed("\"+\"");
+            }
+          }
+          if (result0 !== null) {
+            result1 = parse_primary();
+            if (result1 !== null) {
+              result0 = [result0, result1];
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+          if (result0 !== null) {
+            result0 = (function(offset, e) { return e; })(pos0, result0[1]);
+          }
+          if (result0 === null) {
+            pos = pos0;
+          }
+          if (result0 === null) {
+            result0 = parse_primary();
+          }
         }
         return result0;
       }
@@ -1427,7 +1505,7 @@ ToyParser = (function(){
                   pos = pos1;
                 }
                 if (result0 !== null) {
-                  result0 = (function(offset, e, args) { return { tag:"call", 'function':e, args:args }; })(pos0, result0[1], result0[3]);
+                  result0 = (function(offset, e, args) { return { tag:"call", 'function': e, args:args }; })(pos0, result0[1], result0[3]);
                 }
                 if (result0 === null) {
                   pos = pos0;
@@ -1449,7 +1527,7 @@ ToyParser = (function(){
                     pos = pos1;
                   }
                   if (result0 !== null) {
-                    result0 = (function(offset, i, args) { return { tag:"call", 'function':i, args:args }; })(pos0, result0[0], result0[1]);
+                    result0 = (function(offset, i, args) { return { tag:"call", 'function': { tag:"ident", name:i }, args:args }; })(pos0, result0[0], result0[1]);
                   }
                   if (result0 === null) {
                     pos = pos0;
@@ -1631,6 +1709,74 @@ ToyParser = (function(){
           if (result0 === null) {
             pos = pos0;
           }
+          if (result0 === null) {
+            pos0 = pos;
+            pos1 = pos;
+            if (input.charCodeAt(pos) === 40) {
+              result0 = "(";
+              pos++;
+            } else {
+              result0 = null;
+              if (reportFailures === 0) {
+                matchFailed("\"(\"");
+              }
+            }
+            if (result0 !== null) {
+              result1 = parse___();
+              if (result1 !== null) {
+                result2 = parse_statement_block();
+                if (result2 !== null) {
+                  result3 = [];
+                  result4 = parse_comma_expression();
+                  while (result4 !== null) {
+                    result3.push(result4);
+                    result4 = parse_comma_expression();
+                  }
+                  if (result3 !== null) {
+                    result4 = parse___();
+                    if (result4 !== null) {
+                      if (input.charCodeAt(pos) === 41) {
+                        result5 = ")";
+                        pos++;
+                      } else {
+                        result5 = null;
+                        if (reportFailures === 0) {
+                          matchFailed("\")\"");
+                        }
+                      }
+                      if (result5 !== null) {
+                        result0 = [result0, result1, result2, result3, result4, result5];
+                      } else {
+                        result0 = null;
+                        pos = pos1;
+                      }
+                    } else {
+                      result0 = null;
+                      pos = pos1;
+                    }
+                  } else {
+                    result0 = null;
+                    pos = pos1;
+                  }
+                } else {
+                  result0 = null;
+                  pos = pos1;
+                }
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+            if (result0 !== null) {
+              result0 = (function(offset, b, rest) { return [ { tag:"block", body: b } ].concat( rest ); })(pos0, result0[2], result0[3]);
+            }
+            if (result0 === null) {
+              pos = pos0;
+            }
+          }
         }
         return result0;
       }
@@ -1680,6 +1826,49 @@ ToyParser = (function(){
         if (result0 === null) {
           pos = pos0;
         }
+        if (result0 === null) {
+          pos0 = pos;
+          pos1 = pos;
+          result0 = parse___();
+          if (result0 !== null) {
+            if (input.charCodeAt(pos) === 44) {
+              result1 = ",";
+              pos++;
+            } else {
+              result1 = null;
+              if (reportFailures === 0) {
+                matchFailed("\",\"");
+              }
+            }
+            if (result1 !== null) {
+              result2 = parse___();
+              if (result2 !== null) {
+                result3 = parse_statement_block();
+                if (result3 !== null) {
+                  result0 = [result0, result1, result2, result3];
+                } else {
+                  result0 = null;
+                  pos = pos1;
+                }
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+          if (result0 !== null) {
+            result0 = (function(offset, b) { return { tag:"block", body: b }; })(pos0, result0[3]);
+          }
+          if (result0 === null) {
+            pos = pos0;
+          }
+        }
         return result0;
       }
       
@@ -1727,6 +1916,49 @@ ToyParser = (function(){
         }
         if (result0 === null) {
           pos = pos0;
+        }
+        if (result0 === null) {
+          pos0 = pos;
+          pos1 = pos;
+          result0 = parse_argument_list();
+          if (result0 !== null) {
+            result1 = parse__();
+            if (result1 !== null) {
+              if (input.substr(pos, 2) === "->") {
+                result2 = "->";
+                pos += 2;
+              } else {
+                result2 = null;
+                if (reportFailures === 0) {
+                  matchFailed("\"->\"");
+                }
+              }
+              if (result2 !== null) {
+                result3 = parse_statement_block();
+                if (result3 !== null) {
+                  result0 = [result0, result1, result2, result3];
+                } else {
+                  result0 = null;
+                  pos = pos1;
+                }
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+          if (result0 !== null) {
+            result0 = (function(offset, args, body) { return { tag: "macro", body: body, args: args }; })(pos0, result0[0], result0[3]);
+          }
+          if (result0 === null) {
+            pos = pos0;
+          }
         }
         return result0;
       }
@@ -1912,57 +2144,42 @@ ToyParser = (function(){
       }
       
       function parse_number() {
-        var result0, result1, result2;
+        var result0, result1;
         var pos0, pos1;
         
         pos0 = pos;
         pos1 = pos;
-        if (input.charCodeAt(pos) === 45) {
-          result0 = "-";
+        if (/^[0-9]/.test(input.charAt(pos))) {
+          result1 = input.charAt(pos);
           pos++;
         } else {
-          result0 = null;
+          result1 = null;
           if (reportFailures === 0) {
-            matchFailed("\"-\"");
+            matchFailed("[0-9]");
           }
         }
-        result0 = result0 !== null ? result0 : "";
-        if (result0 !== null) {
-          if (/^[0-9]/.test(input.charAt(pos))) {
-            result2 = input.charAt(pos);
-            pos++;
-          } else {
-            result2 = null;
-            if (reportFailures === 0) {
-              matchFailed("[0-9]");
-            }
-          }
-          if (result2 !== null) {
-            result1 = [];
-            while (result2 !== null) {
-              result1.push(result2);
-              if (/^[0-9]/.test(input.charAt(pos))) {
-                result2 = input.charAt(pos);
-                pos++;
-              } else {
-                result2 = null;
-                if (reportFailures === 0) {
-                  matchFailed("[0-9]");
-                }
+        if (result1 !== null) {
+          result0 = [];
+          while (result1 !== null) {
+            result0.push(result1);
+            if (/^[0-9]/.test(input.charAt(pos))) {
+              result1 = input.charAt(pos);
+              pos++;
+            } else {
+              result1 = null;
+              if (reportFailures === 0) {
+                matchFailed("[0-9]");
               }
             }
-          } else {
-            result1 = null;
           }
+        } else {
+          result0 = null;
+        }
+        if (result0 !== null) {
+          result1 = parse_number_frac();
+          result1 = result1 !== null ? result1 : "";
           if (result1 !== null) {
-            result2 = parse_number_frac();
-            result2 = result2 !== null ? result2 : "";
-            if (result2 !== null) {
-              result0 = [result0, result1, result2];
-            } else {
-              result0 = null;
-              pos = pos1;
-            }
+            result0 = [result0, result1];
           } else {
             result0 = null;
             pos = pos1;
@@ -1972,7 +2189,7 @@ ToyParser = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, sign, chars, frac) { return parseFloat( sign + chars.join( "" ) + frac ); })(pos0, result0[0], result0[1], result0[2]);
+          result0 = (function(offset, chars, frac) { return parseFloat( chars.join( "" ) + frac ); })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;

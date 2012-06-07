@@ -2,23 +2,23 @@
 // Overall structure
 start			=	__ s:statements _ line_comment?				{ return s };
 statements		=	statement*
-statement		=	s:part_statement _ line_comment? EOS						{ return s };
+statement		=	s:part_statement _ line_comment? EOS		{ return s };
 
 // Part statement is a statement without an EOS. Allows us to have } be EOS only in blocks
-part_statement =	_ i:identifier _ "=" _ e:expression						{ return { tag: "=", left: i, right: e }; }
-				/	_ "return" _ e:expression									{ return { tag: "return", expression: e }; }
-				/	_ "module" _ i:identifier									{ return { tag: "module", name: i }; }
-				/	_ "import" _ i:identifier _ "as" _ j:identifier			{ return { tag: "import", name: i, alias: j }; }
-				/	_ "import" _ i:identifier									{ return { tag: "import", name: i }; }
-				/	_ e:expression												{ return { tag: "ignore", body: e }; }
-statement_block	=	empty_lines _ "{" empty_lines s:statements _ "}"			{ return s; }
-				/	empty_lines _ "{" empty_lines s:statements p:part_statement _"}"			{ s.push( p ); return s; }
-				/	statement
+part_statement =	_ i:identifier _ "=" _ e:expression									{ return { tag: "=", left: i, right: e }; }
+				/	_ "return" _ e:expression											{ return { tag: "return", expression: e }; }
+				/	_ "module" _ i:identifier											{ return { tag: "module", name: i }; }
+				/	_ "import" _ i:identifier _ "as" _ j:identifier						{ return { tag: "import", name: i, alias: j }; }
+				/	_ "import" _ i:identifier											{ return { tag: "import", name: i }; }
+				/	_ e:expression														{ return { tag: "ignore", body: e }; }
+statement_block	=	empty_lines _ "{" empty_lines s:statements _ "}"					{ return s; }
+				/	empty_lines _ "{" empty_lines s:statements p:part_statement _"}"	{ s.push( p ); return s; }
+				/	s:statement															{ return [ s ]; }
 
 // Expressions
 expression		=	e:ternary
 // Precedence levels
-ternary			=	e:logical_or _ "?" __ left:ternary __ ":" __ right:ternary				{ return { tag: "ternary", expression: e, left: left, right: right }; }
+ternary			=	e:logical_or _ "?" __ left:ternary __ ":" __ right:ternary			{ return { tag: "ternary", expression: e, left: left, right: right }; }
 				/	logical_or
 logical_or		=	head:logical_and tail:( _ "||" _ logical_or )*
 					{
@@ -56,7 +56,10 @@ multiplicative	=	head:not tail:( _ op:multiplicative_ops _ multiplicative )*
 						for( var i = 0; i < tail.length; i++ ) result = { tag: tail[ i ][ 1 ], left: result, right: tail[ i ][ 3 ] };
 						return result;
 					}
-not				=	"!" _ e:not																{ return { tag: "!", expression: e }; }
+not				=	"!" _ e:not															{ return { tag: "!", expression: e }; }
+				/	sign
+sign			=	"-" e:primary														{ return -e; }
+				/	"+" e:primary														{ return e; }
 				/	primary
 
 // Primary - these are your "first class citizens"
@@ -64,14 +67,17 @@ primary			=	number
 				/	special
 				/	function
 				/	string
-				/	"(" e:expression ")" args:argument_list						{ return { tag:"call", 'function':e, args:args }; }
-				/	i:identifier args:argument_list								{ return { tag:"call", 'function':i, args:args }; }
+				/	"(" e:expression ")" args:argument_list						{ return { tag:"call", 'function': e, args:args }; }
+				/	i:identifier args:argument_list								{ return { tag:"call", 'function': { tag:"ident", name:i }, args:args }; }
 				/	"(" expr:expression ")"										{ return expr; }
 				/	i:identifier												{ return { tag:"ident", name:i } }
 argument_list	=	"(" __ ")"													{ return []; }
 				/	"(" __ first:expression rest:comma_expression* __ ")"		{ return [ first ].concat( rest ); }
+				/	"(" __ b:statement_block rest:comma_expression* __ ")"		{ return [ { tag:"block", body: b } ].concat( rest ); }
 comma_expression =	__ "," __ expr:expression									{ return expr; }
+				/	__ "," __ b:statement_block									{ return { tag:"block", body: b }; }
 function		=	args:argument_list _ "=>" body:statement_block				{ return { tag: "function", body: body, args: args }; }
+				/	args:argument_list _ "->" body:statement_block				{ return { tag: "macro", body: body, args: args }; }
 
 
 // Tokens
@@ -81,7 +87,7 @@ identifier		=	a:valid_first b:valid_rest*									{ return a + b.join( "" ); }
 valid_first		=	[a-zA-Z]
 valid_rest		=	[a-zA-Z0-9_.]
 number_frac		=	"." chars:[0-9]+											{ return "." + chars.join( "" ); }
-number			=	sign:"-"? chars:[0-9]+ frac:number_frac?					{ return parseFloat( sign + chars.join( "" ) + frac ); }
+number			=	chars:[0-9]+ frac:number_frac?								{ return parseFloat( chars.join( "" ) + frac ); }
 string			=	"'" text:([^']*) "'"										{ return text.join( "" ); }
 				/	"\"" text:([^"]*) "\""										{ return text.join( "" ); }
 special			=	true / false / null

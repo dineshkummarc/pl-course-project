@@ -14,6 +14,8 @@
 	// After page load
 	$( function()
 	{
+		compiler = new ToyLang();
+
 		$( '#button' ).click( function()
 		{
 			var user_text = $('#input').val();
@@ -21,11 +23,11 @@
 
 			try
 			{
-				var parsed = ToyLang.parse( user_text );
+				var parsed = compiler.parse( user_text );
 				log( 'Parsed: ' + JSON.stringify( parsed ) );
 				try
 				{
-					var result = evalToyLang( parsed, {} );
+					var result = compiler.evaluate( parsed );
 					log( 'Result: ' + JSON.stringify( result ) );
 				}
 				catch( e )
